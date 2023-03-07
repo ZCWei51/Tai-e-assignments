@@ -69,7 +69,7 @@ public class DeadCodeDetection extends MethodAnalysis {
         Queue<Stmt> cfgWorkList = new ArrayDeque<>();
         Stmt entryNode = cfg.getEntry();
         cfgWorkList.add(entryNode);
-        noDeadCode.add(entryNode);
+//        noDeadCode.add(entryNode);
         Set<Stmt> allNode = cfg.getNodes();
         int cnt = 0;
         arrayInfo.add("所有的stmt数量为"+cfg.getNumberOfNodes());
@@ -79,6 +79,8 @@ public class DeadCodeDetection extends MethodAnalysis {
 //                break;
             cnt+=1;
             Stmt cfgNode = cfgWorkList.poll();
+            if(noDeadCode.contains(cfgNode))
+                continue;
             System.out.println(cfgNode);
             System.out.println(cfgNode.getClass().getTypeName());
 //            for (Stmt stmt : cfg.getSuccsOf(cfgNode)) {
