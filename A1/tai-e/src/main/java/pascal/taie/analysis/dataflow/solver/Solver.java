@@ -25,7 +25,10 @@ package pascal.taie.analysis.dataflow.solver;
 import pascal.taie.analysis.dataflow.analysis.DataflowAnalysis;
 import pascal.taie.analysis.dataflow.fact.DataflowResult;
 import pascal.taie.analysis.graph.cfg.CFG;
+import pascal.taie.ir.stmt.Stmt;
 
+import pascal.taie.analysis.dataflow.analysis.LiveVariableAnalysis;
+import pascal.taie.config.AnalysisConfig;
 /**
  * Base class for data-flow analysis solver, which provides common
  * functionalities for different solver implementations.
@@ -56,6 +59,7 @@ public abstract class Solver<Node, Fact> {
      * @return the analysis result
      */
     public DataflowResult<Node, Fact> solve(CFG<Node> cfg) {
+//        System.out.println("test");
         DataflowResult<Node, Fact> result = initialize(cfg);
         doSolve(cfg, result);
         return result;
@@ -82,6 +86,21 @@ public abstract class Solver<Node, Fact> {
 
     protected void initializeBackward(CFG<Node> cfg, DataflowResult<Node, Fact> result) {
         // TODO - finish me
+        Node exit_ = cfg.getExit();
+//        LiveVariableAnalysis live = new LiveVariableAnalysis(AnalysisConfig config);
+//        live.newBoundaryFact(cfg);
+//        Node node = cfg.getEntry();
+        result.setInFact(exit_, this.analysis.newBoundaryFact(cfg));
+        result.setOutFact(exit_, this.analysis.newBoundaryFact(cfg));
+        for (Node node : cfg)
+        {
+            if (node == exit_)
+            {
+                continue;
+            }
+            result.setInFact(node, this.analysis.newInitialFact());
+            result.setOutFact(node, this.analysis.newInitialFact());
+        }
     }
 
     /**

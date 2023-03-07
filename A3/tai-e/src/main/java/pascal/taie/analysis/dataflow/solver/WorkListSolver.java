@@ -26,19 +26,67 @@ import pascal.taie.analysis.dataflow.analysis.DataflowAnalysis;
 import pascal.taie.analysis.dataflow.fact.DataflowResult;
 import pascal.taie.analysis.graph.cfg.CFG;
 
+import java.util.ArrayDeque;
+import java.util.Queue;
 class WorkListSolver<Node, Fact> extends Solver<Node, Fact> {
 
     WorkListSolver(DataflowAnalysis<Node, Fact> analysis) {
         super(analysis);
     }
 
-    @Override
+//    @Override
+//    protected void doSolveForward(CFG<Node> cfg, DataflowResult<Node, Fact> result) {
+//        // TODO - finish me
+//    }
+@Override
     protected void doSolveForward(CFG<Node> cfg, DataflowResult<Node, Fact> result) {
         // TODO - finish me
+    //        CFG<Node> workList;
+        Queue<Node> workList = new ArrayDeque<>();
+        for (Node node:cfg)
+        {
+            workList.add(node);
+        }
+        while (!workList.isEmpty()){
+            Node node = workList.poll();
+            Fact inFact = result.getInFact(node);
+            Fact outFact = result.getOutFact(node);
+    //            this.analysis.meetInto(inFact, outFact);
+            for (Node preNode : cfg.getPredsOf(node))
+            {
+                this.analysis.meetInto(result.getOutFact(preNode),inFact);
+            }
+            if (this.analysis.transferNode(node,inFact,outFact)){
+                workList.addAll(cfg.getSuccsOf(node));
+            }
+        }
     }
-
     @Override
     protected void doSolveBackward(CFG<Node> cfg, DataflowResult<Node, Fact> result) {
         // TODO - finish me
+//        System.out.println("doSolveBackward");
+        boolean changed = true;
+        while (changed)
+        {
+            changed = false;
+            for(Node node : cfg)
+            {
+                if (node == cfg.getExit())
+                {
+                    continue;
+                }
+                Fact inB = result.getInFact(node);
+                Fact outB = result.getOutFact(node);
+                for (Node succ : cfg.getSuccsOf(node))
+                {
+                    this.analysis.meetInto(result.getInFact(succ),outB);
+                }
+                changed |= this.analysis.transferNode(node, inB, outB);
+            }
+        }
     }
+//    @Override
+//    protected void doSolveBackward(CFG<Node> cfg, DataflowResult<Node, Fact> result) {
+//        // TODO - finish me
+//    }
 }

@@ -76,13 +76,43 @@ public abstract class Solver<Node, Fact> {
         return result;
     }
 
+//    protected void initializeForward(CFG<Node> cfg, DataflowResult<Node, Fact> result) {
+//        // TODO - finish me
+//    }
     protected void initializeForward(CFG<Node> cfg, DataflowResult<Node, Fact> result) {
         // TODO - finish me
+        result.setOutFact(cfg.getEntry(), this.analysis.newBoundaryFact(cfg));
+        result.setInFact(cfg.getEntry(), this.analysis.newBoundaryFact(cfg));
+        for (Node node : cfg)
+        {
+            if(cfg.isEntry(node)){
+                continue;
+            }
+            result.setOutFact(node, this.analysis.newInitialFact());
+            result.setInFact(node, this.analysis.newInitialFact());
+        }
     }
-
     protected void initializeBackward(CFG<Node> cfg, DataflowResult<Node, Fact> result) {
         // TODO - finish me
+        Node exit_ = cfg.getExit();
+//        LiveVariableAnalysis live = new LiveVariableAnalysis(AnalysisConfig config);
+//        live.newBoundaryFact(cfg);
+//        Node node = cfg.getEntry();
+        result.setInFact(exit_, this.analysis.newBoundaryFact(cfg));
+        result.setOutFact(exit_, this.analysis.newBoundaryFact(cfg));
+        for (Node node : cfg)
+        {
+            if (node == exit_)
+            {
+                continue;
+            }
+            result.setInFact(node, this.analysis.newInitialFact());
+            result.setOutFact(node, this.analysis.newInitialFact());
+        }
     }
+//    protected void initializeBackward(CFG<Node> cfg, DataflowResult<Node, Fact> result) {
+//        // TODO - finish me
+//    }
 
     /**
      * Solves the data-flow problem for given CFG.
