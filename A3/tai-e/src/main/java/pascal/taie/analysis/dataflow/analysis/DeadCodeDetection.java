@@ -60,6 +60,7 @@ public class DeadCodeDetection extends MethodAnalysis {
                 ir.getResult(LiveVariableAnalysis.ID);
         // keep statements (dead code) sorted in the resulting set
         Set<Stmt> deadCode = new TreeSet<>(Comparator.comparing(Stmt::getIndex));
+        // noDeadCode用来保存（标记）达到的路径
         Set<Stmt> noDeadCode = new TreeSet<>(Comparator.comparing(Stmt::getIndex));
         ArrayList<String> arrayInfo = new ArrayList<>();
 
@@ -82,10 +83,10 @@ public class DeadCodeDetection extends MethodAnalysis {
             arrayInfo.add(cfgNode.toString());
             arrayInfo.add(cfgNode.getClass().getTypeName());
             arrayInfo.add("这里是遍历cfgNode");
-            if (cfg.isExit(cfgNode)) {
-                cfgWorkList.clear();
-                break;
-            }
+//            if (cfg.isExit(cfgNode)) {
+//                cfgWorkList.clear();
+//                break;
+//            }
             CPFact constantsOutFact = constants.getOutFact(cfgNode);
             CPFact constantsIntFact = constants.getInFact(cfgNode);
             SetFact<Var> liveVarsOutFact = liveVars.getOutFact(cfgNode);
