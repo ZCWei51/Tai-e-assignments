@@ -139,8 +139,9 @@ public class DeadCodeDetection extends MethodAnalysis {
                 arrayInfo.add("这里到达了 SwitchStmt");
                 // 不可到达-常量传播
                 // 处理Switch
-                Var var = switchstmt.getVar();
-                Value evaluateValue = ConstantPropagation.evaluate(var, constantsIntFact);
+//                Var var = switchstmt.getVar();
+//                Value evaluateValue = ConstantPropagation.evaluate(var, constantsIntFact);
+                Value evaluateValue = constants.getResult(switchstmt).get(switchstmt.getVar());
                 if (evaluateValue.isConstant()) {
                     int varConstant = evaluateValue.getConstant();
                     for (Edge<Stmt> edge : cfg.getOutEdgesOf(cfgNode)) {
