@@ -94,7 +94,7 @@ public class DeadCodeDetection extends MethodAnalysis {
                 // 处理AssignStmt
                 for (Edge<Stmt> edge : cfg.getOutEdgesOf(cfgNode)) {
                     cfgWorkList.add(edge.getTarget());
-//                    cfg.getSuccsOf()
+//                   这种写法和cfgWorkList.addAll(cfg.getSuccsOf(cfgNode));结果上是等价的
                 }
                 arrayInfo.add("这里到达了 AssignStmt");
                 if(!hasNoSideEffect(assignStmt.getRValue()))
@@ -115,13 +115,13 @@ public class DeadCodeDetection extends MethodAnalysis {
                     int varConstant = evaluateValue.getConstant();
                     arrayInfo.add("这里是变量varConstant的值" + varConstant);
                     for (Edge<Stmt> edge : cfg.getOutEdgesOf(cfgNode)) {
-                        if (edge.getKind() == Edge.Kind.IF_TRUE && varConstant != 0) {
+                        if (edge.getKind() == Edge.Kind.IF_TRUE && varConstant > 0) {
                             // true
                             arrayInfo.add("here IF_TRUE");
                             noDeadCode.add(cfgNode);
                             cfgWorkList.add(edge.getTarget());
                             break;
-                        } else if (edge.getKind() == Edge.Kind.IF_FALSE && varConstant == 0) {
+                        } else if (edge.getKind() == Edge.Kind.IF_FALSE && varConstant <= 0) {
                             // false
                             noDeadCode.add(cfgNode);
                             cfgWorkList.add(edge.getTarget());
