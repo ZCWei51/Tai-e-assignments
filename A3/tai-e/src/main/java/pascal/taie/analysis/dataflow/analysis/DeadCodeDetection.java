@@ -69,164 +69,126 @@ public class DeadCodeDetection extends MethodAnalysis {
         Queue<Stmt> cfgWorkList = new ArrayDeque<>();
         Stmt entryNode = cfg.getEntry();
         cfgWorkList.add(entryNode);
-//        noDeadCode.add(entryNode);
         Set<Stmt> allNode = cfg.getNodes();
         int cnt = 0;
-        arrayInfo.add("所有的stmt数量为"+cfg.getNumberOfNodes());
+        arrayInfo.add("所有的stmt数量为" + cfg.getNumberOfNodes());
         while (!cfgWorkList.isEmpty()) {
-            System.out.printf("这是第%d次\n",cnt);
-//            if(cnt > 10)
-//                break;
-            cnt+=1;
+            arrayInfo.add("\n这是第"+cnt+"次");
+            cnt += 1;
             Stmt cfgNode = cfgWorkList.poll();
-            if(noDeadCode.contains(cfgNode))
+            arrayInfo.add("LineNumber"+cfgNode.getLineNumber());
+            if (noDeadCode.contains(cfgNode))
                 continue;
-            System.out.println(cfgNode);
-            System.out.println(cfgNode.getClass().getTypeName());
-//            for (Stmt stmt : cfg.getSuccsOf(cfgNode)) {
-                System.out.println("这里是遍历cfgNode");
-//                System.out.println(stmt);
-                if(cfg.isExit(cfgNode))
-                {
-                    cfgWorkList.clear();
-                    break;
+            arrayInfo.add(cfgNode.toString());
+            arrayInfo.add(cfgNode.getClass().getTypeName());
+            arrayInfo.add("这里是遍历cfgNode");
+            if (cfg.isExit(cfgNode)) {
+                cfgWorkList.clear();
+                break;
+            }
+            CPFact constantsOutFact = constants.getOutFact(cfgNode);
+            CPFact constantsIntFact = constants.getInFact(cfgNode);
+            SetFact<Var> liveVarsOutFact = liveVars.getOutFact(cfgNode);
+            if (cfgNode instanceof AssignStmt assignStmt) {
+                // 无用赋值-活跃变量
+                // 处理AssignStmt
+                for (Edge<Stmt> edge : cfg.getOutEdgesOf(cfgNode)) {
+                    cfgWorkList.add(edge.getTarget());
+//                    cfg.getSuccsOf()
                 }
-//                System.out.println(cfgNode);
-                CPFact constantsOutFact = constants.getOutFact(cfgNode);
-                CPFact constantsIntFact = constants.getInFact(cfgNode);
-                SetFact<Var> liveVarsOutFact = liveVars.getOutFact(cfgNode);
-                if(cfgNode instanceof AssignStmt assignStmt && assignStmt.getLValue() instanceof Var var && hasNoSideEffect(assignStmt.getRValue()))
+                arrayInfo.add("这里到达了 AssignStmt");
+                if(!hasNoSideEffect(assignStmt.getRValue()))
                 {
-                    // 无用赋值-活跃变量
-                    // 处理AssignStmt
-                    for(Edge<Stmt> edge : cfg.getOutEdgesOf(cfgNode))
-                    {
-                        cfgWorkList.add(edge.getTarget());
-                    }
-//                    cfgWorkList.add(stmt);
-                    System.out.println("这里到达了 AssignStmt");
-
-//                    stmt instanceof IfStmt
-                    if(liveVarsOutFact.contains(var))
-                    {
-                        System.out.println(cfgNode);
-                        noDeadCode.add(cfgNode);
-                    }
-//                    liveVarsOutFact.
-//                if(stmt instanceof DefinitionStmt definitionStmt && definitionStmt.getLValue())
-//                constantsOutFact.get();
-//                liveVarsOutFact.union();
-
-                } else if (cfgNode instanceof If ifstmt) {
-                    System.out.println("这里到达了 IfStmt");
-                    // 不可到达-常量传播
-                    // 处理 IF
-                    Value evaluateValue = ConstantPropagation.evaluate(ifstmt.getCondition(), constantsIntFact);
-                    if(evaluateValue.isConstant())
-                    {
-                        int varConstant = evaluateValue.getConstant();
-                        System.out.println("这里是变量varConstant的值"+varConstant);
-                        for(Edge<Stmt> edge : cfg.getOutEdgesOf(cfgNode))
-                        {
-                            if(edge.getKind() == Edge.Kind.IF_TRUE && varConstant!=0)
-                            {
-                                // true
-                                System.out.println("here IF_TRUE");
-//                            noDeadCode.add(edge.getTarget());
-                                noDeadCode.add(cfgNode);
-                                cfgWorkList.add(edge.getTarget());
-//                            noDeadCode.add(edge.getSource());
-                                break;
-                            } else if (edge.getKind() == Edge.Kind.IF_FALSE && varConstant==0) {
-                                // false
-//                            noDeadCode.add(edge.getTarget());
-                                noDeadCode.add(cfgNode);
-                                cfgWorkList.add(edge.getTarget());
-//                            noDeadCode.add(edge.getSource());
-                                break;
-                            }
-                        }
-                    }else
-                    {
-                        noDeadCode.add(cfgNode);
-                        for(Edge<Stmt> edge : cfg.getOutEdgesOf(cfgNode))
-                        {
-                            cfgWorkList.add(edge.getTarget());
-                        }
-//                        cfgWorkList.add(stmt);
-                    }
-
-                } else if (cfgNode instanceof SwitchStmt switchstmt) {
-                    System.out.println("这里到达了 SwitchStmt");
-                    // 不可到达-常量传播
-                    // 处理Switch
-                    Var var = switchstmt.getVar();
-                    Value evaluateValue = ConstantPropagation.evaluate(var, constantsIntFact);
-                    if(evaluateValue.isConstant())
-                    {
-                        int varConstant = evaluateValue.getConstant();
-                        for (Edge<Stmt> edge : cfg.getOutEdgesOf(cfgNode)) {
-                            if (edge.getKind() == Edge.Kind.SWITCH_CASE && edge.getCaseValue() == varConstant) {
-//                            noDeadCode.add(edge.getTarget());
-                                noDeadCode.add(cfgNode);
-                                cfgWorkList.add(edge.getTarget());
-                                break;
-                            } else if (edge.getKind() == Edge.Kind.SWITCH_DEFAULT) {
-                                // 如果没有break则说明会到达default分支
-//                            noDeadCode.add(edge.getTarget());
-                                noDeadCode.add(cfgNode);
-                                cfgWorkList.add(edge.getTarget());
-                            }
-                        }
-                    }else {
-                        noDeadCode.add(cfgNode);
-                        for(Edge<Stmt> edge : cfg.getOutEdgesOf(cfgNode))
-                        {
-                            cfgWorkList.add(edge.getTarget());
-                        }
-//                        cfgWorkList.add(stmt);
-                    }
-                }else
-                {
-                    System.out.println("here line(190)");
-                    for(Edge<Stmt> edge : cfg.getOutEdgesOf(cfgNode))
-                    {
-                        cfgWorkList.add(edge.getTarget());
-                    }
-//                    cfgWorkList.add(stmt);
+                    continue;
+                }
+                arrayInfo.add("通过了副作用检查");
+                if ( assignStmt.getLValue() instanceof Var var && liveVarsOutFact.contains(var)) {
+                    arrayInfo.add(cfgNode.toString());
                     noDeadCode.add(cfgNode);
                 }
-//            }
-            System.out.println("---------开始----------");
-            System.out.println("here print cfgWorklist");
-            for(Stmt stmt : cfgWorkList)
-            {
-                System.out.println(stmt);
+            } else if (cfgNode instanceof If ifstmt) {
+                arrayInfo.add("这里到达了 IfStmt");
+                // 不可到达-常量传播
+                // 处理 IF
+                Value evaluateValue = ConstantPropagation.evaluate(ifstmt.getCondition(), constantsIntFact);
+                if (evaluateValue.isConstant()) {
+                    int varConstant = evaluateValue.getConstant();
+                    arrayInfo.add("这里是变量varConstant的值" + varConstant);
+                    for (Edge<Stmt> edge : cfg.getOutEdgesOf(cfgNode)) {
+                        if (edge.getKind() == Edge.Kind.IF_TRUE && varConstant != 0) {
+                            // true
+                            arrayInfo.add("here IF_TRUE");
+                            noDeadCode.add(cfgNode);
+                            cfgWorkList.add(edge.getTarget());
+                            break;
+                        } else if (edge.getKind() == Edge.Kind.IF_FALSE && varConstant == 0) {
+                            // false
+                            noDeadCode.add(cfgNode);
+                            cfgWorkList.add(edge.getTarget());
+                            break;
+                        }
+                    }
+                } else {
+                    noDeadCode.add(cfgNode);
+                    for (Edge<Stmt> edge : cfg.getOutEdgesOf(cfgNode)) {
+                        cfgWorkList.add(edge.getTarget());
+                    }
+                }
+
+            } else if (cfgNode instanceof SwitchStmt switchstmt) {
+                arrayInfo.add("这里到达了 SwitchStmt");
+                // 不可到达-常量传播
+                // 处理Switch
+                Var var = switchstmt.getVar();
+                Value evaluateValue = ConstantPropagation.evaluate(var, constantsIntFact);
+                if (evaluateValue.isConstant()) {
+                    int varConstant = evaluateValue.getConstant();
+                    for (Edge<Stmt> edge : cfg.getOutEdgesOf(cfgNode)) {
+                        if (edge.getKind() == Edge.Kind.SWITCH_CASE && edge.getCaseValue() == varConstant) {
+//                            noDeadCode.add(edge.getTarget());
+                            noDeadCode.add(cfgNode);
+                            cfgWorkList.add(edge.getTarget());
+                            break;
+                        } else if (edge.getKind() == Edge.Kind.SWITCH_DEFAULT) {
+                            // 如果没有break则说明会到达default分支
+                            noDeadCode.add(cfgNode);
+                            cfgWorkList.add(edge.getTarget());
+                        }
+                    }
+                } else {
+                    noDeadCode.add(cfgNode);
+                    for (Edge<Stmt> edge : cfg.getOutEdgesOf(cfgNode)) {
+                        cfgWorkList.add(edge.getTarget());
+                    }
+                }
+            } else {
+                arrayInfo.add("here other stmt");
+                for (Edge<Stmt> edge : cfg.getOutEdgesOf(cfgNode)) {
+                    cfgWorkList.add(edge.getTarget());
+                }
+                noDeadCode.add(cfgNode);
             }
-            System.out.println("---------结束----------");
         }
-//        allNode.removeAll(noDeadCode);
-//        deadCode.addAll(allNode);
-        System.out.println("遍历输出allNode");
-        System.out.println("---------开始----------");
-        for(Stmt stmt : allNode)
-        {
-            System.out.println(stmt);
+        arrayInfo.add("遍历输出allNode");
+        arrayInfo.add("---------开始----------");
+        for (Stmt stmt : allNode) {
+            arrayInfo.add(stmt.toString());
         }
-        System.out.println("---------结束----------");
-        System.out.println("遍历输出noDeadCode");
-        System.out.println("---------开始----------");
-        for(Stmt stmt : noDeadCode)
-        {
-            System.out.println(stmt);
+        arrayInfo.add("---------结束----------");
+        arrayInfo.add("遍历输出noDeadCode");
+        arrayInfo.add("---------开始----------");
+        for (Stmt stmt : noDeadCode) {
+            arrayInfo.add(stmt.toString());
         }
-        System.out.println("---------结束----------");
-        for(Stmt stmt : allNode)
+        arrayInfo.add("---------结束----------");
+        for(String str : arrayInfo)
         {
+            System.out.println(str);
+        }
+        for (Stmt stmt : allNode) {
             if (cfg.isExit(stmt) || cfg.isEntry(stmt))
                 continue;
-            if (!noDeadCode.contains(stmt))
-            {
+            if (!noDeadCode.contains(stmt)) {
                 deadCode.add(stmt);
             }
         }
