@@ -96,15 +96,20 @@ public class DeadCodeDetection extends MethodAnalysis {
                     cfgWorkList.add(edge.getTarget());
 //                   这种写法和cfgWorkList.addAll(cfg.getSuccsOf(cfgNode));结果上是等价的
                 }
+                noDeadCode.add(cfgNode);
                 arrayInfo.add("这里到达了 AssignStmt");
                 if(!hasNoSideEffect(assignStmt.getRValue()))
                 {
                     continue;
                 }
                 arrayInfo.add("通过了副作用检查");
-                if ( assignStmt.getLValue() instanceof Var var && liveVarsOutFact.contains(var)) {
+//                if (assignStmt.getLValue() instanceof Var var && liveVarsOutFact.contains(var)) {
+//                    arrayInfo.add(cfgNode.toString());
+//                    noDeadCode.add(cfgNode);
+//                }
+                if (assignStmt.getLValue() instanceof Var var && !liveVarsOutFact.contains(var)) {
                     arrayInfo.add(cfgNode.toString());
-                    noDeadCode.add(cfgNode);
+                    noDeadCode.remove(cfgNode);
                 }
             } else if (cfgNode instanceof If ifstmt) {
                 arrayInfo.add("这里到达了 IfStmt");
@@ -139,9 +144,8 @@ public class DeadCodeDetection extends MethodAnalysis {
                 arrayInfo.add("这里到达了 SwitchStmt");
                 // 不可到达-常量传播
                 // 处理Switch
-//                Var var = switchstmt.getVar();
-//                Value evaluateValue = ConstantPropagation.evaluate(var, constantsIntFact);
-                Value evaluateValue = constants.getResult(switchstmt).get(switchstmt.getVar());
+                Var var = switchstmt.getVar();
+                Value evaluateValue = ConstantPropagation.evaluate(var, constantsIntFact);
                 if (evaluateValue.isConstant()) {
                     int varConstant = evaluateValue.getConstant();
                     for (Edge<Stmt> edge : cfg.getOutEdgesOf(cfgNode)) {
