@@ -150,7 +150,8 @@ public class InterConstantPropagation extends
         callSite.getDef().get();
         for(Var var : edge.getReturnVars())
         {
-            if(var == stmt.getDef().get())
+            // 这里处理return我感觉肯定写的有问题
+            if(stmt.getDef().isPresent() && var == stmt.getDef().get())
             {
                 ReturnEdgeOut.update((Var) callSite.getDef().get(),returnOut.get(var));
             }

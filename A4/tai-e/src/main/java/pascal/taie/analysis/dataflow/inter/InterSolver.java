@@ -28,10 +28,7 @@ import pascal.taie.analysis.graph.icfg.ICFG;
 import pascal.taie.analysis.graph.icfg.ICFGEdge;
 import pascal.taie.util.collection.SetQueue;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -92,6 +89,7 @@ class InterSolver<Method, Node, Fact> {
 
     private void doSolve() {
         // TODO - finish me
+        Queue<Node> workList  = new ArrayDeque<>();
         for(Node node:icfg)
         {
             workList.add(node);

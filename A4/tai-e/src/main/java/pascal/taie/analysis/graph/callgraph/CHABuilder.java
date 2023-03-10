@@ -53,12 +53,15 @@ class CHABuilder implements CGBuilder<Invoke, JMethod> {
         // TODO - finish me
         Queue<JMethod> workingList = new ArrayDeque<>();
         Queue<JMethod> reachMethod = new ArrayDeque<>();
+//        reachMethod.add(entry);
         workingList.add(entry);
         while (!workingList.isEmpty())
         {
             JMethod jMethod = workingList.poll();
+
             if(!reachMethod.contains(jMethod)){
                 reachMethod.add(jMethod);
+                callGraph.addReachableMethod(jMethod);
                 // 关于stream的处理-如何遍历
                 Stream<Invoke> callSites = callGraph.callSitesIn(jMethod);
                 List<Invoke> csList = new ArrayList<>();
@@ -68,14 +71,14 @@ class CHABuilder implements CGBuilder<Invoke, JMethod> {
                     Set<JMethod> T = resolve(callSite);
                     for(JMethod m : T)
                     {
-                        if(!callGraph.contains(m))
-                        {
+//                        if(!callGraph.contains(m))
+//                        {
                             // 运行出现bug 现在初步怀疑是这里建图的时候有问题！
-                            callGraph.addReachableMethod(m);
+//                            callGraph.addReachableMethod(m);
                             Edge<Invoke, JMethod> Edge = new Edge<>(CallGraphs.getCallKind(callSite),callSite,m);
                             callGraph.addEdge(Edge);
                             workingList.add(m);
-                        }
+//                        }
                     }
                 }
             }
@@ -89,7 +92,7 @@ class CHABuilder implements CGBuilder<Invoke, JMethod> {
     private Set<JMethod> resolve(Invoke callSite) {
         // TODO - finish me
         Set<JMethod> T = new HashSet<JMethod>();
-        CallGraph<Invoke, JMethod> callGraph = build();
+//        CallGraph<Invoke, JMethod> callGraph = build();
         MethodRef methodRef = callSite.getMethodRef();
         if(CallGraphs.getCallKind(callSite) == CallKind.STATIC)
         {
