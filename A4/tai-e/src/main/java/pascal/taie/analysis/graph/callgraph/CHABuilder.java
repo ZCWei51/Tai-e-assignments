@@ -30,9 +30,9 @@ import pascal.taie.language.classes.JClass;
 import pascal.taie.language.classes.JMethod;
 import pascal.taie.language.classes.Subsignature;
 
-import java.util.ArrayDeque;
-import java.util.Queue;
-import java.util.Set;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * Implementation of the CHA algorithm.
@@ -51,6 +51,35 @@ class CHABuilder implements CGBuilder<Invoke, JMethod> {
         DefaultCallGraph callGraph = new DefaultCallGraph();
         callGraph.addEntryMethod(entry);
         // TODO - finish me
+        Queue<JMethod> workingList = new ArrayDeque<>();
+        Queue<JMethod> reachMethod = new ArrayDeque<>();
+        workingList.add(entry);
+        while (!workingList.isEmpty())
+        {
+            JMethod jMethod = workingList.poll();
+            if(!reachMethod.contains(jMethod)){
+                reachMethod.add(jMethod);
+                // 关于stream的处理-如何遍历
+                Stream<Invoke> callSites = callGraph.callSitesIn(jMethod);
+                List<Invoke> csList = new ArrayList<>();
+                callSites.forEach(csList::add);
+                for(Invoke callSite : csList)
+                {
+                    Set<JMethod> T = resolve(callSite);
+                    for(JMethod m : T)
+                    {
+                        if(!callGraph.contains(m))
+                        {
+                            // 运行出现bug 现在初步怀疑是这里建图的时候有问题！
+                            callGraph.addReachableMethod(m);
+                            Edge<Invoke, JMethod> Edge = new Edge<>(CallGraphs.getCallKind(callSite),callSite,m);
+                            callGraph.addEdge(Edge);
+                            workingList.add(m);
+                        }
+                    }
+                }
+            }
+        }
         return callGraph;
     }
 
@@ -59,7 +88,23 @@ class CHABuilder implements CGBuilder<Invoke, JMethod> {
      */
     private Set<JMethod> resolve(Invoke callSite) {
         // TODO - finish me
-        return null;
+        Set<JMethod> T = new HashSet<JMethod>();
+        CallGraph<Invoke, JMethod> callGraph = build();
+        MethodRef methodRef = callSite.getMethodRef();
+        if(CallGraphs.getCallKind(callSite) == CallKind.STATIC)
+        {
+            T.add(methodRef.getDeclaringClass().getDeclaredMethod(methodRef.getSubsignature()));
+        } else if (CallGraphs.getCallKind(callSite) == CallKind.SPECIAL) {
+            T.add(dispatch(methodRef.getDeclaringClass(),methodRef.getSubsignature()));
+        }else if (CallGraphs.getCallKind(callSite) == CallKind.VIRTUAL) {
+            JClass jClass = methodRef.getDeclaringClass();
+            for(JClass subClass : hierarchy.getDirectSubclassesOf(methodRef.getDeclaringClass()))
+            {
+                T.add(dispatch(jClass,methodRef.getSubsignature()));
+            }
+            T.add(dispatch(jClass,methodRef.getSubsignature()));
+        }
+        return T;
     }
 
     /**
@@ -70,6 +115,18 @@ class CHABuilder implements CGBuilder<Invoke, JMethod> {
      */
     private JMethod dispatch(JClass jclass, Subsignature subsignature) {
         // TODO - finish me
-        return null;
+        JMethod jmethod = jclass.getDeclaredMethod(subsignature);
+        if (!jmethod.isAbstract())
+        {
+            return jmethod;
+        }else {
+            if (jclass.getSuperClass() != null)
+            {
+                jmethod = dispatch(jclass.getSuperClass(), subsignature);
+                return jmethod;
+            }
+            else
+                return null;
+        }
     }
 }
