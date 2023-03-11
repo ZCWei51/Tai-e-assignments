@@ -62,34 +62,35 @@ class InterSolver<Method, Node, Fact> {
 
     private void initialize() {
         // TODO - finish me
-//        Stream<Method> entry = icfg.entryMethods();
-//        List<Method> entryList = new ArrayList<>();
-//        for(Node node : icfg)
-//        {
-//            result.setInFact(node, this.analysis.newInitialFact());
-//            result.setOutFact(node, this.analysis.newInitialFact());
-//        }
-////        for(Method method : entryList)
-//        for(Method method : icfg.entryMethods().toList())
-//        {
-//
-//            result.setInFact(icfg.getEntryOf(method),this.analysis.newBoundaryFact(icfg.getEntryOf(method)));
-//            result.setOutFact(icfg.getEntryOf(method),this.analysis.newBoundaryFact(icfg.getEntryOf(method)));
-//        }
-        for (Node node : icfg) {
+        Stream<Method> entry = icfg.entryMethods();
+        List<Method> entryList = new ArrayList<>();
+        for(Node node : icfg)
+        {
             result.setInFact(node, this.analysis.newInitialFact());
             result.setOutFact(node, this.analysis.newInitialFact());
         }
-        for (Method entryMethod : icfg.entryMethods().toList()) { // ?
-            Node entryNode = icfg.getEntryOf(entryMethod);
-            result.setInFact(entryNode, this.analysis.newBoundaryFact(entryNode));
-            result.setOutFact(entryNode, this.analysis.newBoundaryFact(entryNode));
+//        for(Method method : entryList)
+        for(Method method : icfg.entryMethods().toList())
+        {
+
+            result.setInFact(icfg.getEntryOf(method),this.analysis.newBoundaryFact(icfg.getEntryOf(method)));
+            result.setOutFact(icfg.getEntryOf(method),this.analysis.newBoundaryFact(icfg.getEntryOf(method)));
         }
+//        for (Node node : icfg) {
+//            result.setInFact(node, this.analysis.newInitialFact());
+//            result.setOutFact(node, this.analysis.newInitialFact());
+//        }
+//        for (Method entryMethod : icfg.entryMethods().toList()) { // ?
+//            Node entryNode = icfg.getEntryOf(entryMethod);
+//            result.setInFact(entryNode, this.analysis.newBoundaryFact(entryNode));
+//            result.setOutFact(entryNode, this.analysis.newBoundaryFact(entryNode));
+//        }
     }
 
     private void doSolve() {
         // TODO - finish me
-        Queue<Node> workList  = new ArrayDeque<>();
+//        Queue<Node> workList  = new ArrayDeque<>();
+        Queue<Node> workList  = new SetQueue<>();
         for(Node node:icfg)
         {
             workList.add(node);

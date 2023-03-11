@@ -43,6 +43,9 @@ import pascal.taie.ir.stmt.Invoke;
 import pascal.taie.ir.stmt.Stmt;
 import pascal.taie.language.classes.JMethod;
 
+import java.util.ArrayList;
+import java.util.List;
+
 
 /**
  * Implementation of interprocedural constant propagation for int values.
@@ -84,19 +87,20 @@ public class InterConstantPropagation extends
     protected boolean transferCallNode(Stmt stmt, CPFact in, CPFact out) {
         // TODO - finish me
 //        return false;
-        if(stmt instanceof DefinitionStmt definitionStmt && definitionStmt.getLValue() instanceof Var var && cp.canHoldInt(var)){
-            Exp exp = definitionStmt.getRValue();
-            Value evaluateValue = cp.evaluate(exp, in);
-            CPFact inCopy = in.copy();
-            inCopy.remove(var);
-            boolean changed = out.update(var, evaluateValue);
-            changed |= out.copyFrom(inCopy);
-            out.remove(var);
-            return changed;
-
-        }else {
-            return out.copyFrom(in);
-        }
+//        if(stmt instanceof DefinitionStmt definitionStmt && definitionStmt.getLValue() instanceof Var var && cp.canHoldInt(var)){
+//            Exp exp = definitionStmt.getRValue();
+//            Value evaluateValue = cp.evaluate(exp, in);
+//            CPFact inCopy = in.copy();
+//            inCopy.remove(var);
+//            boolean changed = out.update(var, evaluateValue);
+//            changed |= out.copyFrom(inCopy);
+//            out.remove(var);
+//            return changed;
+//
+//        }else {
+//            return out.copyFrom(in);
+//        }
+        return out.copyFrom(in);
     }
 
     @Override
@@ -119,8 +123,9 @@ public class InterConstantPropagation extends
 //        return null;
         Stmt stmt = edge.getSource();
         CPFact outCpoy = out.copy();
-        if(stmt.getDef().get() instanceof Var var)
-            outCpoy.remove(var);
+        if(stmt.getDef().isPresent() && stmt.getDef().get() instanceof Var var)
+//            outCpoy.remove(var);
+            outCpoy.update(var,Value.getUndef());
         return outCpoy;
     }
 
@@ -129,33 +134,65 @@ public class InterConstantPropagation extends
         // TODO - finish me
 //        return null;
         Stmt stmt = edge.getSource();
+        List<Var> invokeList = new ArrayList<>();
+        if(stmt instanceof Invoke invoke)
+        {
+            invokeList = invoke.getInvokeExp().getArgs();
+        }
         CPFact CallEdgeIn = new CPFact();
         JMethod jMethod = edge.getCallee();
         IR calleeIR = jMethod.getIR();
         for(Var var:calleeIR.getParams())
         {
-            Value value = callSiteOut.get(var);
+            // 之前犯的一个错误，这里调用callSiteOut.get时输入的var应该时调用点调用函数时的变量，但是之前直接用callee的参数去输入返回肯定就是null了
+            Value value = callSiteOut.get(invokeList.get(var.getIndex()));
             CallEdgeIn.update(var,value);
         }
         return CallEdgeIn;
     }
-
+//
     @Override
     protected CPFact transferReturnEdge(ReturnEdge<Stmt> edge, CPFact returnOut) {
         // TODO - finish me
 //        return null;
         CPFact ReturnEdgeOut = new CPFact();
         Stmt callSite = edge.getCallSite();
-        Stmt stmt = edge.getSource();
-        callSite.getDef().get();
+//        Stmt stmt = edge.getSource();
+        Stmt stmtTarget = edge.getTarget();
+//        Var varDefTarget =  (Var) stmtTarget.getDef().get();
+
+//        Var tmpVar = edge.getReturnVars().stream().toList().get(0);
+//        Value tmpValue = returnOut.get(tmpVar);
+        Value tmpValue = Value.getUndef();
         for(Var var : edge.getReturnVars())
         {
-            // 这里处理return我感觉肯定写的有问题
-            if(stmt.getDef().isPresent() && var == stmt.getDef().get())
-            {
-                ReturnEdgeOut.update((Var) callSite.getDef().get(),returnOut.get(var));
-            }
+
+            tmpValue = cp.meetValue(returnOut.get(var),tmpValue);
+            // 这里处理returnEdge的处理我肯定写的有问题
+//            if(stmt.getDef().isPresent() && var == stmt.getDef().get())
+//            {
+//                ReturnEdgeOut.update(varDefCS,returnOut.get(var));
+//            }
         }
+        if(callSite.getDef().isPresent()) {
+            Var varDefCS = (Var) callSite.getDef().get();
+            ReturnEdgeOut.update(varDefCS, tmpValue);
+        }
+//        ReturnEdgeOut.update(varDefTarget,tmpValue);
         return ReturnEdgeOut;
     }
+
+
+//    @Override
+//    protected CPFact transferReturnEdge(ReturnEdge<Stmt> edge, CPFact returnOut) {
+//        CPFact fact = new CPFact();
+//        if (edge.getCallSite() instanceof Invoke invoke && invoke.getLValue() != null) {
+//            Value value = Value.getUndef();
+//            for (Var returnVar : edge.getReturnVars()) {
+//                value = this.cp.meetValue(value, returnOut.get(returnVar));
+//            }
+//            fact.update(invoke.getLValue(), value);
+//        }
+//        return fact;
+//    }
 }
