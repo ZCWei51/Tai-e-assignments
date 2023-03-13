@@ -138,15 +138,18 @@ public class InterConstantPropagation extends
         if(stmt instanceof Invoke invoke)
         {
             invokeList = invoke.getInvokeExp().getArgs();
+//            invoke.getInvokeExp().getArg();
         }
         CPFact CallEdgeIn = new CPFact();
         JMethod jMethod = edge.getCallee();
         IR calleeIR = jMethod.getIR();
+        int cnt = 0;
         for(Var var:calleeIR.getParams())
         {
             // 之前犯的一个错误，这里调用callSiteOut.get时输入的var应该时调用点调用函数时的变量，但是之前直接用callee的参数去输入返回肯定就是null了
-            Value value = callSiteOut.get(invokeList.get(var.getIndex()));
+            Value value = callSiteOut.get(invokeList.get(cnt));
             CallEdgeIn.update(var,value);
+            cnt+=1;
         }
         return CallEdgeIn;
     }

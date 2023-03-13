@@ -89,19 +89,38 @@ class CHABuilder implements CGBuilder<Invoke, JMethod> {
     /**
      * Resolves call targets (callees) of a call site via CHA.
      */
-//    private Set<JMethod> resolve(Invoke callSite) {
-//        // TODO - finish me
-//        Set<JMethod> T = new HashSet<JMethod>();
-//        MethodRef methodRef = callSite.getMethodRef();
-//        if(CallGraphs.getCallKind(callSite) == CallKind.STATIC)
-//        {
-//            T.add(methodRef.getDeclaringClass().getDeclaredMethod(methodRef.getSubsignature()));
-//        } else if (CallGraphs.getCallKind(callSite) == CallKind.SPECIAL) {
-//            JMethod jMethod = dispatch(methodRef.getDeclaringClass(),methodRef.getSubsignature());
-//            if(jMethod != null)
-//                T.add(jMethod);
-//        }else if (CallGraphs.getCallKind(callSite) == CallKind.VIRTUAL) {
-//            JClass jClass = methodRef.getDeclaringClass();
+    private Set<JMethod> resolve(Invoke callSite) {
+        // TODO - finish me
+        Set<JMethod> T = new HashSet<JMethod>();
+        MethodRef methodRef = callSite.getMethodRef();
+        if(CallGraphs.getCallKind(callSite) == CallKind.STATIC)
+        {
+            T.add(methodRef.getDeclaringClass().getDeclaredMethod(methodRef.getSubsignature()));
+        } else if (CallGraphs.getCallKind(callSite) == CallKind.SPECIAL) {
+            JMethod jMethod = dispatch(methodRef.getDeclaringClass(),methodRef.getSubsignature());
+            if(jMethod != null)
+                T.add(jMethod);
+        }else if (CallGraphs.getCallKind(callSite) == CallKind.VIRTUAL || CallGraphs.getCallKind(callSite) == CallKind.INTERFACE) {
+            JClass jClass = methodRef.getDeclaringClass();
+            Queue<JClass> workinglist = new ArrayDeque<>();
+            workinglist.add(jClass);
+            while (!workinglist.isEmpty())
+            {
+                JClass jClass1 = workinglist.poll();
+                if (jClass1 == null)
+                    continue;
+                if(jClass1.isInterface())
+                {
+                    workinglist.addAll(hierarchy.getDirectSubinterfacesOf(jClass1));
+                    workinglist.addAll(hierarchy.getDirectImplementorsOf(jClass1));
+                }else
+                {
+                    workinglist.addAll(hierarchy.getDirectSubclassesOf(jClass1));
+                }
+                JMethod jMethod = dispatch(jClass1,methodRef.getSubsignature());
+                if(jMethod != null)
+                    T.add(jMethod);
+            }
 //            for(JClass subClass : hierarchy.getDirectSubclassesOf(jClass))
 //            {
 //                JMethod jMethod =dispatch(subClass,methodRef.getSubsignature());
@@ -111,42 +130,8 @@ class CHABuilder implements CGBuilder<Invoke, JMethod> {
 //            JMethod jMethod =dispatch(jClass,methodRef.getSubsignature());
 //            if(jMethod != null)
 //                T.add(jMethod);
-//        }
-//        return T;
-//    }
-    private Set<JMethod> resolve(Invoke callSite) {
-        Set<JMethod> methods = new HashSet<>();
-        MethodRef methodRef = callSite.getMethodRef();
-        Subsignature subsignature = methodRef.getSubsignature();
-        if (callSite.isStatic() || callSite.isSpecial()) {
-            JClass jclass = methodRef.getDeclaringClass();
-            JMethod method = dispatch(jclass, subsignature);
-            if (method != null) {
-                methods.add(method);
-            }
-        } else if (callSite.isVirtual() || callSite.isInterface()) {
-            JClass jclass = methodRef.getDeclaringClass();
-            addSubclassesMethod(jclass, subsignature, methods);
         }
-        return methods;
-    }
-
-    void addSubclassesMethod(JClass jclass, Subsignature subsignature, Set<JMethod> methods) {
-        JMethod method = dispatch(jclass, subsignature);
-        if (method != null) {
-            methods.add(method);
-        }
-        Queue<JClass> classQueue = new ArrayDeque<>();
-        // NOTE: 不能使用 c = hierarchy.getDirectImplementorsOf(jclass)); c.addAll(hierarchy.getDirectSubinterfacesOf(jclass)); c 是个和内部逻辑共享实例，修改会内部逻辑
-        if (jclass.isInterface()) {
-            classQueue.addAll(hierarchy.getDirectImplementorsOf(jclass));
-            classQueue.addAll(hierarchy.getDirectSubinterfacesOf(jclass));
-        } else {
-            classQueue.addAll(hierarchy.getDirectSubclassesOf(jclass));
-        }
-        for (JClass jSubclass : classQueue) {
-            this.addSubclassesMethod(jSubclass, subsignature, methods);
-        }
+        return T;
     }
 
     /**
